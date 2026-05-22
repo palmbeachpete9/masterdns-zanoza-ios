@@ -134,7 +134,7 @@ public final class ClientViewModel: ObservableObject {
             return
         }
         status = .starting
-        AppLogger.shared.append("Starting Slipstream tunnel for \(profile.domain)...")
+        AppLogger.shared.append("Starting Zanoza tunnel for \(profile.domain)...")
 
         startTask?.cancel()
         startTask = Task { [weak self] in
@@ -220,7 +220,7 @@ public final class ClientViewModel: ObservableObject {
             create: true
         )) ?? URL(fileURLWithPath: NSTemporaryDirectory())
         return base
-            .appendingPathComponent("Slipstream", isDirectory: true)
+            .appendingPathComponent("Zanoza", isDirectory: true)
             .appendingPathComponent(profile.id.uuidString, isDirectory: true)
     }
 }

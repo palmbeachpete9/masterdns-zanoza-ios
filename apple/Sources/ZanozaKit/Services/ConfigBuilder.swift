@@ -10,7 +10,7 @@ public enum ConfigBuilder {
         let pass = escape(profile.socksPass)
 
         return """
-        # Slipstream generated client_config.toml — do not edit manually.
+        # Zanoza generated client_config.toml — do not edit manually.
         DOMAINS = ["\(domain)"]
         DATA_ENCRYPTION_METHOD = \(profile.encryptionMethod.rawValue)
         ENCRYPTION_KEY = "\(key)"

@@ -30,7 +30,7 @@ public enum AppLocalization {
     }
 
     private static func clientKitResourceBundle() -> Bundle? {
-        let bundleName = "SlipstreamApple_SlipstreamKit.bundle"
+        let bundleName = "ZanozaApple_ZanozaKit.bundle"
         let candidates: [URL?] = [
             Bundle.main.resourceURL?.appendingPathComponent(bundleName),
             Bundle(for: AppLocalizationBundleToken.self).resourceURL?.appendingPathComponent(bundleName),

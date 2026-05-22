@@ -1,17 +1,17 @@
-# Slipstream
+# Zanoza
 
 iOS client for [MasterDnsVPN](https://github.com/masterking32/MasterDnsVPN) — a DNS-tunneling VPN for high-censorship networks.
 
-Slipstream wraps the upstream MasterDnsVPN Go client into an iOS app, exposes its local SOCKS5 proxy at `127.0.0.1:41080`, and keeps the tunnel running while you switch to another app (Shadowrocket, Happ, etc.) that consumes the proxy.
+Zanoza wraps the upstream MasterDnsVPN Go client into an iOS app, exposes its local SOCKS5 proxy at `127.0.0.1:41080`, and keeps the tunnel running while you switch to another app (Shadowrocket, Happ, etc.) that consumes the proxy.
 
 The app intentionally does **not** create an iOS VPN profile. There is no NetworkExtension. The tunnel stays alive in the background via a silent-audio trick (`UIBackgroundModes=audio`), so the app must be at least once launched and started — after that you can switch away and the SOCKS listener keeps serving traffic.
 
 ## Repository layout
 
 ```
-Slipstream/
+Zanoza/
 ├── apple/                            # Xcode / SwiftPM project
-│   ├── Package.swift                 # SlipstreamKit shared library
+│   ├── Package.swift                 # ZanozaKit shared library
 │   ├── project.yml                   # XcodeGen project definition
 │   ├── Frameworks/                   # Mobile.xcframework lands here
 │   ├── Scripts/
@@ -20,17 +20,17 @@ Slipstream/
 │   │   ├── prepare-xcode.sh             # xcodegen wrapper
 │   │   └── generate-icon.py             # AppIcon generator (Pillow)
 │   ├── Sources/
-│   │   ├── SlipstreamApp/            # iOS app target
+│   │   ├── ZanozaApp/            # iOS app target
 │   │   │   ├── Assets.xcassets/AppIcon.appiconset/
 │   │   │   ├── Info.plist            # UIBackgroundModes=[audio]
-│   │   │   └── SlipstreamApp.swift
-│   │   └── SlipstreamKit/            # Shared SwiftPM library
+│   │   │   └── ZanozaApp.swift
+│   │   └── ZanozaKit/            # Shared SwiftPM library
 │   │       ├── Models/               # ConnectionProfile, ClientStatus
 │   │       ├── Services/             # MasterDnsEngine, BackgroundRuntimeKeeper, …
 │   │       ├── ViewModels/           # ClientViewModel
 │   │       ├── Views/                # ContentView, ImportProfileSheet, …
 │   │       └── Resources/{en,ru}.lproj/Localizable.strings
-│   └── Tests/SlipstreamKitTests/
+│   └── Tests/ZanozaKitTests/
 └── masterdns/                        # Vendored MasterDnsVPN fork
     ├── go.mod                        # adds golang.org/x/mobile dep
     └── mobile/                       # gomobile-bindable wrapper package
@@ -57,7 +57,7 @@ apple/Scripts/prepare-xcode.sh
 
 # 3. Build an unsigned IPA
 apple/Scripts/build-ios-unsigned-local-ipa.sh
-#   → apple/.build/ios-unsigned-local/Slipstream-unsigned.ipa
+#   → apple/.build/ios-unsigned-local/Zanoza-unsigned.ipa
 ```
 
 The IPA is unsigned. Sign and install it on a device using:
@@ -69,16 +69,16 @@ Enable **Settings → Privacy & Security → Developer Mode** on the iPhone befo
 
 ## Usage
 
-1. Launch Slipstream and tap **Import**.
+1. Launch Zanoza and tap **Import**.
 2. Enter the delegated domain from your MasterDnsVPN server (the same value as the NS record, e.g. `v.example.com`).
 3. Enter the shared encryption key (must match the server-side key).
 4. Tap **Import**, then the connect (power) button.
 5. The SOCKS5 proxy comes up at `127.0.0.1:41080`. Open Shadowrocket / Happ / Stash and add a SOCKS5 proxy pointing at that address.
-6. Slipstream keeps the listener alive while you switch to the other app via a silent-audio background mode. Killing Slipstream from the app switcher stops the tunnel.
+6. Zanoza keeps the listener alive while you switch to the other app via a silent-audio background mode. Killing Zanoza from the app switcher stops the tunnel.
 
 ## How the background trick works
 
-iOS suspends regular apps shortly after they leave the foreground. Slipstream declares `UIBackgroundModes = ["audio"]` and plays a 1-second silent PCM buffer on loop through `AVAudioEngine`. While audio is rendering, iOS keeps the process alive — and the SOCKS listener with it. The audio session uses `.mixWithOthers` so it does not interrupt your music. See `apple/Sources/SlipstreamKit/Services/BackgroundRuntimeKeeper.swift`.
+iOS suspends regular apps shortly after they leave the foreground. Zanoza declares `UIBackgroundModes = ["audio"]` and plays a 1-second silent PCM buffer on loop through `AVAudioEngine`. While audio is rendering, iOS keeps the process alive — and the SOCKS listener with it. The audio session uses `.mixWithOthers` so it does not interrupt your music. See `apple/Sources/ZanozaKit/Services/BackgroundRuntimeKeeper.swift`.
 
 ## Credits
 

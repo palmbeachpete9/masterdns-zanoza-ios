@@ -1,5 +1,5 @@
 import XCTest
-@testable import SlipstreamKit
+@testable import ZanozaKit
 
 final class ConfigBuilderTests: XCTestCase {
     func testBuildsTOMLWithDomainAndPort() {

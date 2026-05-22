@@ -5,14 +5,14 @@ import PackageDescription
 // The Mobile.xcframework must be built before resolving this package.
 // Generate it via: apple/Scripts/build-xcframework.sh
 let package = Package(
-    name: "SlipstreamApple",
+    name: "ZanozaApple",
     defaultLocalization: "en",
     platforms: [
         .iOS(.v16),
         .macOS(.v13),
     ],
     products: [
-        .library(name: "SlipstreamKit", targets: ["SlipstreamKit"]),
+        .library(name: "ZanozaKit", targets: ["ZanozaKit"]),
     ],
     targets: [
         .binaryTarget(
@@ -20,7 +20,7 @@ let package = Package(
             path: "Frameworks/Mobile.xcframework"
         ),
         .target(
-            name: "SlipstreamKit",
+            name: "ZanozaKit",
             dependencies: [
                 .target(name: "Mobile", condition: .when(platforms: [.iOS])),
             ],
@@ -29,8 +29,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "SlipstreamKitTests",
-            dependencies: ["SlipstreamKit"]
+            name: "ZanozaKitTests",
+            dependencies: ["ZanozaKit"]
         ),
     ]
 )

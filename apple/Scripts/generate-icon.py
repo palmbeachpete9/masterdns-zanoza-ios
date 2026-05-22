@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the Slipstream iOS AppIcon set.
+"""Generate the Zanoza iOS AppIcon set.
 
 Renders a 1024x1024 master icon with:
   - warm orange radial-ish gradient background
@@ -8,7 +8,7 @@ Renders a 1024x1024 master icon with:
   - a tiny basket below the balloon for character
 
 Then downsizes to every iOS AppIcon slot found in
-Sources/SlipstreamApp/Assets.xcassets/AppIcon.appiconset/Contents.json.
+Sources/ZanozaApp/Assets.xcassets/AppIcon.appiconset/Contents.json.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter
 
 HERE = Path(__file__).resolve().parent
-APPICON_DIR = (HERE / "../Sources/SlipstreamApp/Assets.xcassets/AppIcon.appiconset").resolve()
+APPICON_DIR = (HERE / "../Sources/ZanozaApp/Assets.xcassets/AppIcon.appiconset").resolve()
 
 MASTER = 1024
 

@@ -3,11 +3,11 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 APPLE_DIR="$ROOT_DIR/apple"
-SCHEME="Slipstream"
+SCHEME="Zanoza"
 CONFIGURATION="${CONFIGURATION:-Release}"
 BUILD_DIR="${BUILD_DIR:-$APPLE_DIR/.build/ios-unsigned-local}"
 PAYLOAD_DIR="$BUILD_DIR/Payload"
-IPA_PATH="$BUILD_DIR/Slipstream-unsigned.ipa"
+IPA_PATH="$BUILD_DIR/Zanoza-unsigned.ipa"
 
 if [[ -z "${DEVELOPER_DIR:-}" && -d /Applications/Xcode.app/Contents/Developer ]]; then
   export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
@@ -40,14 +40,14 @@ gomobile init >/dev/null 2>&1 || true
 if command -v xcodegen >/dev/null 2>&1; then
   (cd "$APPLE_DIR" && xcodegen generate)
 else
-  echo "xcodegen not found; assuming Slipstream.xcodeproj is already generated." >&2
+  echo "xcodegen not found; assuming Zanoza.xcodeproj is already generated." >&2
 fi
 
 rm -rf "$BUILD_DIR"
 mkdir -p "$PAYLOAD_DIR"
 
 xcodebuild \
-  -project "$APPLE_DIR/Slipstream.xcodeproj" \
+  -project "$APPLE_DIR/Zanoza.xcodeproj" \
   -scheme "$SCHEME" \
   -configuration "$CONFIGURATION" \
   -sdk iphoneos \

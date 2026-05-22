@@ -1,4 +1,4 @@
-/* Slipstream Russian strings */
+/* Zanoza Russian strings */
 
 "Disconnected" = "Отключено";
 "Connecting..." = "Подключение...";
@@ -20,7 +20,7 @@
 "Clear" = "Очистить";
 
 "No profiles yet" = "Профилей пока нет";
-"Tap Import to add a Slipstream server using its delegated domain and encryption key." = "Нажмите «Импортировать», чтобы добавить сервер Slipstream по делегированному домену и ключу шифрования.";
+"Tap Import to add a Zanoza server using its delegated domain and encryption key." = "Нажмите «Импортировать», чтобы добавить сервер Zanoza по делегированному домену и ключу шифрования.";
 "Profiles" = "Профили";
 "Untitled" = "Без названия";
 "No profile" = "Профиль не выбран";

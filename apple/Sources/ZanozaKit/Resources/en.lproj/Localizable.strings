@@ -1,4 +1,4 @@
-/* Slipstream English strings */
+/* Zanoza English strings */
 
 "Disconnected" = "Disconnected";
 "Connecting..." = "Connecting...";
@@ -20,7 +20,7 @@
 "Clear" = "Clear";
 
 "No profiles yet" = "No profiles yet";
-"Tap Import to add a Slipstream server using its delegated domain and encryption key." = "Tap Import to add a Slipstream server using its delegated domain and encryption key.";
+"Tap Import to add a Zanoza server using its delegated domain and encryption key." = "Tap Import to add a Zanoza server using its delegated domain and encryption key.";
 "Profiles" = "Profiles";
 "Untitled" = "Untitled";
 "No profile" = "No profile";

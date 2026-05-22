@@ -1,8 +1,8 @@
 MIT License
 
-Copyright (c) 2026 Slipstream contributors
+Copyright (c) 2026 Zanoza contributors
 
-The Slipstream iOS client embeds and re-distributes the MasterDnsVPN Go
+The Zanoza iOS client embeds and re-distributes the MasterDnsVPN Go
 client by MasterkinG32 (https://github.com/masterking32/MasterDnsVPN).
 See `masterdns/LICENSE` for that project's license terms.
 

@@ -1,8 +1,8 @@
-import SlipstreamKit
+import ZanozaKit
 import SwiftUI
 
 @main
-struct SlipstreamApp: App {
+struct ZanozaApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

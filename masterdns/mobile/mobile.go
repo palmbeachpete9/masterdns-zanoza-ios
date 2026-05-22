@@ -1,5 +1,5 @@
 // Package mobile exposes a narrow, gomobile-bindable surface for the
-// MasterDnsVPN client. Used by the Slipstream iOS / macOS app.
+// MasterDnsVPN client. Used by the Zanoza iOS / macOS app.
 package mobile
 
 import (
@@ -113,7 +113,7 @@ func Start(configTOML, resolversText, runtimeDir string) error {
 		}
 	}()
 
-	emit("Slipstream tunnel started.")
+	emit("Zanoza tunnel started.")
 	return nil
 }
 
@@ -135,7 +135,7 @@ func Stop() {
 	if pump != nil {
 		pump.stop()
 	}
-	emit("Slipstream tunnel stopped.")
+	emit("Zanoza tunnel stopped.")
 }
 
 func emit(line string) {

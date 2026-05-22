@@ -37,7 +37,7 @@ public struct ImportProfileSheet: View {
             Form {
                 Section {
                     TextField("v.example.com", text: $domain)
-                        .slipstreamPlainInput()
+                        .zanozaPlainInput()
                         .onSubmit(importIfReady)
                 } header: {
                     Text(AppLocalization.string("Delegated domain"))
@@ -47,7 +47,7 @@ public struct ImportProfileSheet: View {
 
                 Section {
                     SecureField(AppLocalization.string("Encryption key"), text: $encryptionKey)
-                        .slipstreamPlainInput()
+                        .zanozaPlainInput()
                         .onSubmit(importIfReady)
                 } header: {
                     Text(AppLocalization.string("Shared key"))
@@ -57,7 +57,7 @@ public struct ImportProfileSheet: View {
 
                 Section {
                     TextField(AppLocalization.string("Optional"), text: $name)
-                        .slipstreamPlainInput()
+                        .zanozaPlainInput()
                         .onSubmit(importIfReady)
                 } header: {
                     Text(AppLocalization.string("Profile name"))

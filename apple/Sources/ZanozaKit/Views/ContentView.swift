@@ -33,7 +33,7 @@ public struct ContentView: View {
                     )
                 }
             }
-            .navigationTitle("Slipstream")
+            .navigationTitle("Zanoza")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -314,7 +314,7 @@ private struct EmptyProfilesView: View {
                 Text(AppLocalization.string("No profiles yet"))
                     .font(.title3.weight(.semibold))
                     .multilineTextAlignment(.center)
-                Text(AppLocalization.string("Tap Import to add a Slipstream server using its delegated domain and encryption key."))
+                Text(AppLocalization.string("Tap Import to add a Zanoza server using its delegated domain and encryption key."))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

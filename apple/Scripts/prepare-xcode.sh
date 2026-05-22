@@ -10,4 +10,4 @@ fi
 
 cd "$APPLE_DIR"
 xcodegen generate
-echo "Generated $APPLE_DIR/Slipstream.xcodeproj"
+echo "Generated $APPLE_DIR/Zanoza.xcodeproj"

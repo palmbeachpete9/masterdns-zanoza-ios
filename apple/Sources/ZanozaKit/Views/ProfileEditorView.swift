@@ -26,16 +26,16 @@ public struct ProfileEditorView: View {
 
             Section(AppLocalization.string("Profile")) {
                 TextField(AppLocalization.string("Profile name"), text: $profile.name)
-                    .slipstreamPlainInput()
+                    .zanozaPlainInput()
                     .onSubmit(onCommit)
             }
 
             Section(AppLocalization.string("Server")) {
                 TextField("v.example.com", text: $profile.domain)
-                    .slipstreamPlainInput()
+                    .zanozaPlainInput()
                     .onSubmit(onCommit)
                 SecureField(AppLocalization.string("Encryption key"), text: $profile.encryptionKey)
-                    .slipstreamPlainInput()
+                    .zanozaPlainInput()
                     .onSubmit(onCommit)
                 Picker(AppLocalization.string("Encryption method"), selection: $profile.encryptionMethod) {
                     ForEach(EncryptionMethod.allCases) { method in
@@ -49,10 +49,10 @@ public struct ProfileEditorView: View {
                 Toggle(AppLocalization.string("Require username/password"), isOn: $profile.socksAuthEnabled)
                 if profile.socksAuthEnabled {
                     TextField(AppLocalization.string("Username"), text: $profile.socksUser)
-                        .slipstreamPlainInput()
+                        .zanozaPlainInput()
                         .onSubmit(onCommit)
                     SecureField(AppLocalization.string("Password"), text: $profile.socksPass)
-                        .slipstreamPlainInput()
+                        .zanozaPlainInput()
                         .onSubmit(onCommit)
                 }
             }
@@ -187,7 +187,7 @@ private struct ResolversTextEditor: View {
 
 extension View {
     @ViewBuilder
-    func slipstreamPlainInput() -> some View {
+    func zanozaPlainInput() -> some View {
         #if os(iOS)
         self
             .textFieldStyle(.plain)
