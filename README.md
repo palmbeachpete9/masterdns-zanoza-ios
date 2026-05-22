@@ -3,7 +3,7 @@
 iOS client for [MasterDnsVPN](https://github.com/masterking32/MasterDnsVPN) — a DNS-tunneling VPN for high-censorship networks.
 
 It wraps the upstream MasterDnsVPN Go client into an iOS app, exposes its local SOCKS5 proxy at `127.0.0.1:41080`, and keeps the tunnel running while you switch to another app (Shadowrocket, Happ, etc.) that runs the proxy.
-The app does **not** create an iOS VPN profile, since it is unsigned. There is no NetworkExtension, no VPN toggle.
+The app does **not** create an iOS VPN profile, since it is unsigned.
 
 Special thanks to [plumbicon](https://github.com/plumbicon/godwit), as their UI was used as a foundation.
 
