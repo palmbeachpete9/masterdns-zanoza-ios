@@ -71,8 +71,10 @@ def make_balloon_layer(size: int) -> Image.Image:
     cy = size * 0.46
     balloon_r = size * 0.32
 
-    white_alpha = 235
-    body = (255, 255, 255, white_alpha)
+    # Balloon body is translucent white (~70 % alpha). Map dots are nearly
+    # opaque white so they read as "etched" against the softer balloon.
+    body_alpha = 180
+    body = (255, 255, 255, body_alpha)
 
     # Balloon body (slightly squashed sphere).
     draw.ellipse(
@@ -122,7 +124,8 @@ def make_balloon_layer(size: int) -> Image.Image:
     grid_x0 = cx - grid_w / 2
     grid_y0 = cy - grid_h / 2
     dot = max(2, int(size * 0.012))
-    dot_color = (228, 92, 30, 200)
+    # Brighter, more-opaque white than the balloon body so the map "etches".
+    dot_color = (255, 255, 255, 245)
     for ry, row in enumerate(WORLD_MAP):
         for rx, ch in enumerate(row):
             if ch != "#":
@@ -159,14 +162,14 @@ def make_balloon_layer(size: int) -> Image.Image:
     ImageDraw.Draw(basket).rounded_rectangle(
         (basket_x0, basket_y0, basket_x1, basket_y1),
         radius=int(basket_h * 0.30),
-        fill=(255, 255, 255, white_alpha),
+        fill=(255, 255, 255, body_alpha),
     )
     layer = Image.alpha_composite(layer, basket)
 
     # Suspension cords from balloon to basket corners.
     cord_layer = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     cord_draw = ImageDraw.Draw(cord_layer, "RGBA")
-    cord = (255, 255, 255, white_alpha)
+    cord = (255, 255, 255, body_alpha)
     cord_w = max(2, int(size * 0.006))
     cord_draw.line(
         [(cx - neck_bot_w, neck_bot_y), (basket_x0 + basket_w * 0.10, basket_y0)],

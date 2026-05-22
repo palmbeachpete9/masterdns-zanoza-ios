@@ -65,6 +65,15 @@ if [[ -z "$APP_PATH" ]]; then
 fi
 
 cp -R "$APP_PATH" "$PAYLOAD_DIR/"
+APP_BUNDLE="$PAYLOAD_DIR/$(basename "$APP_PATH")"
+
+# The Mobile.framework directory is left behind by Xcode's binaryTarget
+# embedder, but every gomobile symbol is already statically linked into the
+# main app binary (verified via `nm` / `otool -L`). The framework binary is a
+# 33 KB ar archive that iOS never dlopens (no LC_LOAD_DYLIB references it),
+# so we drop it to keep the IPA lean and avoid future codesign surprises.
+rm -rf "$APP_BUNDLE/Frameworks"
+
 rm -f "$IPA_PATH"
 (cd "$BUILD_DIR" && /usr/bin/zip -qry "$IPA_PATH" Payload)
 
