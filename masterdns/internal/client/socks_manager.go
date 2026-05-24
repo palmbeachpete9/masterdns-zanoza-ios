@@ -569,6 +569,47 @@ func (c *Client) sendSocksReply(conn net.Conn, rep byte, atyp byte, bndAddr net.
 	return err
 }
 
+// buildSocksUDPResponseHeader builds an RFC-1928-compliant SOCKS5 UDP
+// response header that echoes the original target address+port from the
+// request. ATYP comes straight from the request byte. Domain ATYP is
+// preserved literally (length-prefixed). Unknown ATYP fall back to IPv4 0.
+func buildSocksUDPResponseHeader(atyp byte, targetAddr string, targetPort uint16) []byte {
+	header := make([]byte, 0, 4+260+2)
+	header = append(header, 0x00, 0x00, 0x00) // RSV (2) + FRAG (1)
+
+	switch atyp {
+	case SOCKS5_ATYP_IPV4:
+		ip := net.ParseIP(targetAddr)
+		v4 := ip.To4()
+		if v4 == nil {
+			v4 = net.IPv4zero.To4()
+		}
+		header = append(header, SOCKS5_ATYP_IPV4)
+		header = append(header, v4...)
+	case SOCKS5_ATYP_IPV6:
+		ip := net.ParseIP(targetAddr)
+		v6 := ip.To16()
+		if v6 == nil {
+			v6 = net.IPv6zero
+		}
+		header = append(header, SOCKS5_ATYP_IPV6)
+		header = append(header, v6...)
+	case SOCKS5_ATYP_DOMAIN:
+		name := []byte(targetAddr)
+		if len(name) > 255 {
+			name = name[:255]
+		}
+		header = append(header, SOCKS5_ATYP_DOMAIN, byte(len(name)))
+		header = append(header, name...)
+	default:
+		header = append(header, SOCKS5_ATYP_IPV4, 0, 0, 0, 0)
+	}
+
+	portBytes := []byte{byte(targetPort >> 8), byte(targetPort & 0xff)}
+	header = append(header, portBytes...)
+	return header
+}
+
 func (c *Client) rejectSocksUDPAssociateUnsupportedTarget(conn net.Conn, targetAddr string, targetPort uint16) {
 	if c.log != nil {
 		c.log.Debugf("⚠️ <yellow>SOCKS5 UDP packet to unsupported target %s:%d rejected (Only DNS/53 allowed).</yellow>", targetAddr, targetPort)
@@ -677,9 +718,18 @@ func (c *Client) handleSocksUDPAssociate(ctx context.Context, conn net.Conn, cli
 		c.log.Infof("📡 <green>Received DNS Query from SOCKS5 UDP: <cyan>%d bytes</cyan>, Target: <cyan>%s:%d</cyan></green>", n-payloadOffset, targetAddr, targetPort)
 
 		dnsQuery := buf[payloadOffset:n]
+		respATYP := buf[3]
+		respTargetAddr := targetAddr
+		respTargetPort := targetPort
 
 		isHit := c.ProcessDNSQuery(dnsQuery, peerAddr, func(resp []byte) {
-			header := []byte{0x00, 0x00, 0x00, SOCKS5_ATYP_IPV4, 0, 0, 0, 0, 0, 53}
+			// SOCKS5 RFC 1928: the per-packet UDP response header must
+			// echo the original DST.ADDR / DST.PORT so the client can
+			// demux replies across multiple concurrent UDP flows. v0.1.2
+			// fixed BND.ADDR of the initial CONNECT reply; this fixes
+			// the per-packet header which was hardcoded 0.0.0.0:53 and
+			// caused Happ / Shadowrocket to drop every DNS response.
+			header := buildSocksUDPResponseHeader(respATYP, respTargetAddr, respTargetPort)
 			fullResp := append(header, resp...)
 			_, _ = udpConn.WriteToUDP(fullResp, peerAddr)
 		})

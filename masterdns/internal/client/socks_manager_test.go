@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"io"
 	"net"
 	"testing"
@@ -9,6 +10,57 @@ import (
 	"masterdnsvpn-go/internal/config"
 	VpnProto "masterdnsvpn-go/internal/vpnproto"
 )
+
+func TestBuildSocksUDPResponseHeaderIPv4EchoesTarget(t *testing.T) {
+	got := buildSocksUDPResponseHeader(SOCKS5_ATYP_IPV4, "77.88.8.88", 53)
+	want := []byte{
+		0x00, 0x00, // RSV
+		0x00,                   // FRAG
+		SOCKS5_ATYP_IPV4,       // ATYP
+		77, 88, 8, 88,          // DST.ADDR
+		0x00, 0x35,             // DST.PORT = 53
+	}
+	if !bytes.Equal(got, want) {
+		t.Fatalf("header = %x, want %x", got, want)
+	}
+}
+
+func TestBuildSocksUDPResponseHeaderIPv6EchoesTarget(t *testing.T) {
+	got := buildSocksUDPResponseHeader(SOCKS5_ATYP_IPV6, "2001:db8::1", 5353)
+	if len(got) != 4+16+2 {
+		t.Fatalf("unexpected len %d", len(got))
+	}
+	if got[3] != SOCKS5_ATYP_IPV6 {
+		t.Errorf("ATYP = %x, want IPv6", got[3])
+	}
+	if got[len(got)-2] != 0x14 || got[len(got)-1] != 0xE9 {
+		t.Errorf("port bytes = %x %x, want 14 E9 (5353)", got[len(got)-2], got[len(got)-1])
+	}
+}
+
+func TestBuildSocksUDPResponseHeaderDomainPreservesName(t *testing.T) {
+	got := buildSocksUDPResponseHeader(SOCKS5_ATYP_DOMAIN, "dns.example.com", 53)
+	if got[3] != SOCKS5_ATYP_DOMAIN {
+		t.Fatalf("ATYP = %x, want DOMAIN", got[3])
+	}
+	nameLen := int(got[4])
+	if nameLen != len("dns.example.com") {
+		t.Fatalf("name len = %d", nameLen)
+	}
+	if string(got[5:5+nameLen]) != "dns.example.com" {
+		t.Errorf("name = %q", string(got[5:5+nameLen]))
+	}
+}
+
+func TestBuildSocksUDPResponseHeaderNeverProducesZeroAddr(t *testing.T) {
+	// The pre-v0.1.3 bug: header was hardcoded to 0.0.0.0:53. Make sure
+	// the new builder echoes real targets — the regression bait is any
+	// header whose ATYP=IPv4 has 0.0.0.0 when a real IP was provided.
+	got := buildSocksUDPResponseHeader(SOCKS5_ATYP_IPV4, "1.2.3.4", 53)
+	if got[4] == 0 && got[5] == 0 && got[6] == 0 && got[7] == 0 {
+		t.Fatal("regression: header DST.ADDR is 0.0.0.0 for non-zero target")
+	}
+}
 
 func TestSupportsSOCKS4Policy(t *testing.T) {
 	tests := []struct {
