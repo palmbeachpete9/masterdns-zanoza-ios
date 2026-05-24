@@ -1,81 +1,87 @@
+<div align="right">
+
+**🇷🇺 Русский** · [🇬🇧 English](README.en.md)
+
+</div>
+
 # Zanoza
 
-iOS client for [MasterDnsVPN](https://github.com/masterking32/MasterDnsVPN) — a DNS-tunneling VPN for extreme-censorship networks.
+iOS-клиент для [MasterDnsVPN](https://github.com/masterking32/MasterDnsVPN) — VPN на основе туннелирования через DNS для сетей с жёсткой цензурой.
 
-It wraps the upstream MasterDnsVPN Go client into an iOS app, exposes its local SOCKS5 proxy at `127.0.0.1:41080`, and keeps the tunnel running while you switch to another app (Shadowrocket, Happ, etc.) that runs the proxy.
-The app does **not** create an iOS VPN profile, since it is unsigned.
+Приложение оборачивает оригинальный Go-клиент MasterDnsVPN в iOS-приложение, поднимает локальный SOCKS5-прокси на `127.0.0.1:41080` и держит туннель активным, пока вы переключаетесь в другое приложение (Shadowrocket, Happ и т. п.), которое уже пропускает через этот прокси системный трафик.
+Собственный VPN-профиль iOS приложение **не** создаёт, поскольку оно неподписанное.
 
-## Repository layout
+## Структура репозитория
 
 ```
 Zanoza/
-├── apple/                            # Xcode / SwiftPM project
-│   ├── Package.swift                 # ZanozaKit shared library
-│   ├── project.yml                   # XcodeGen project definition
-│   ├── Frameworks/                   # Mobile.xcframework lands here
+├── apple/                            # Проект Xcode / SwiftPM
+│   ├── Package.swift                 # Общая библиотека ZanozaKit
+│   ├── project.yml                   # Описание проекта для XcodeGen
+│   ├── Frameworks/                   # Сюда падает Mobile.xcframework
 │   ├── Scripts/
 │   │   ├── build-xcframework.sh         # gomobile bind → Mobile.xcframework
 │   │   ├── build-ios-unsigned-local-ipa.sh
-│   │   ├── prepare-xcode.sh             # xcodegen wrapper
-│   │   └── generate-icon.py             # AppIcon generator (Pillow)
+│   │   ├── prepare-xcode.sh             # обёртка над xcodegen
+│   │   └── generate-icon.py             # генератор AppIcon (Pillow)
 │   ├── Sources/
-│   │   ├── ZanozaApp/            # iOS app target
+│   │   ├── ZanozaApp/                # таргет iOS-приложения
 │   │   │   ├── Assets.xcassets/AppIcon.appiconset/
 │   │   │   ├── Info.plist            # UIBackgroundModes=[audio]
 │   │   │   └── ZanozaApp.swift
-│   │   └── ZanozaKit/            # Shared SwiftPM library
+│   │   └── ZanozaKit/                # Общая SwiftPM-библиотека
 │   │       ├── Models/               # ConnectionProfile, ClientStatus
 │   │       ├── Services/             # MasterDnsEngine, BackgroundRuntimeKeeper, …
 │   │       ├── ViewModels/           # ClientViewModel
 │   │       ├── Views/                # ContentView, ImportProfileSheet, …
 │   │       └── Resources/{en,ru}.lproj/Localizable.strings
 │   └── Tests/ZanozaKitTests/
-└── masterdns/                        # Vendored MasterDnsVPN fork
-    ├── go.mod                        # adds golang.org/x/mobile dep
-    └── mobile/                       # gomobile-bindable wrapper package
+└── masterdns/                        # Vendored-форк MasterDnsVPN
+    ├── go.mod                        # добавлена зависимость golang.org/x/mobile
+    └── mobile/                       # gomobile-обёртка
         ├── mobile.go                 #   Start/Stop/IsRunning/SetLogWriter
-        └── stdout_pump.go            #   forwards stdout → LogWriter
+        └── stdout_pump.go            #   перенаправляет stdout → LogWriter
 ```
 
-## Prerequisites
+## Что должно быть установлено
 
-- macOS 14 + Xcode 16 (the iOS toolchain ships with Xcode)
+- macOS 14 + Xcode 16 (iOS-инструментарий идёт в составе Xcode)
 - [Homebrew](https://brew.sh)
 - `brew install go xcodegen`
 - `go install golang.org/x/mobile/cmd/gomobile@latest && gomobile init`
-- Python 3 with Pillow (`python3 -m pip install --user pillow`) — only needed if you want to regenerate the AppIcon
+- Python 3 с Pillow (`python3 -m pip install --user pillow`) — только если хотите пересобрать иконку приложения
 
-## Build
+## Сборка
 
 ```bash
-# 1. Build the Go xcframework
+# 1. Собираем Go-xcframework
 apple/Scripts/build-xcframework.sh
 
-# 2. Generate the Xcode project
+# 2. Генерируем проект Xcode
 apple/Scripts/prepare-xcode.sh
 
-# 3. Build an unsigned IPA
+# 3. Собираем неподписанный IPA
 apple/Scripts/build-ios-unsigned-local-ipa.sh
 #   → apple/.build/ios-unsigned-local/Zanoza-unsigned.ipa
 ```
 
-The IPA is unsigned. Sign and install it on a device using:
+IPA-файл не подписан. Подпишите и установите его на устройство одним из способов:
 
-- **[Sideloadly](https://sideloadly.io)** — drop the IPA in, sign with your Apple ID, install via USB. Free Apple ID profiles expire every 7 days; a paid Apple Developer account ($99/yr) gets 1-year profiles.
-- **AltStore / SideStore** — install on-device, no Mac needed for re-signing after the first push.
+- **[Sideloadly](https://sideloadly.io)** — перетащите IPA в окно, подпишите своим Apple ID и установите через USB. Профили на бесплатном Apple ID действуют 7 дней; платный аккаунт Apple Developer (99 $ в год) даёт срок 1 год.
+- **AltStore / SideStore** — установка прямо на устройстве, после первой настройки Mac уже не нужен.
 
-Enable **Settings → Privacy & Security → Developer Mode** on the iPhone before the first install.
+Перед первой установкой включите на iPhone **Настройки → Конфиденциальность и безопасность → Режим разработчика**.
 
-## Usage
+## Использование
 
-1. Launch Zanoza and tap **Import**.
-2. Enter the delegated domain from your MasterDnsVPN server (the same value as the NS record, e.g. `v.example.com`).
-3. Enter the shared encryption key (must match the server-side key).
-4. Tap **Import**, then the connect (power) button. **Encryption Type** must match the server's server_config.toml **DATA_ENCRYPTION_METHOD** (XOR by default in both)
-5. The SOCKS5 proxy comes up at `127.0.0.1:41080`. Open Shadowrocket / Happ / etc. and add a SOCKS5 proxy pointing at that address.
-6. Zanoza keeps the listener alive while you switch to other apps. Killing Zanoza from the app switcher stops the tunnel.
+1. Запустите Zanoza и нажмите **Импорт**.
+2. Введите делегированный домен с вашего сервера MasterDnsVPN (то же значение, что в NS-записи, например `v.example.com`).
+3. Введите общий ключ шифрования (должен совпадать с ключом на стороне сервера).
+4. Нажмите **Импорт**, затем кнопку питания. **Метод шифрования** должен совпадать со значением `DATA_ENCRYPTION_METHOD` в `server_config.toml` сервера (по умолчанию в обоих местах XOR).
+5. SOCKS5-прокси поднимется на `127.0.0.1:41080`. Откройте Shadowrocket / Happ / любой подобный — и добавьте SOCKS5-прокси на этот адрес.
+6. Zanoza держит слушатель живым, пока вы переключаетесь между приложениями. Если выгнать Zanoza из переключателя приложений, туннель остановится.
 
-## Credits
+## Благодарности
 
-- Upstream protocol and Go client: [MasterDnsVPN by MasterkinG32](https://github.com/masterking32/MasterDnsVPN)
-- iOS application shell follows the structure of [Godwit](https://github.com/plumbicon/godwit) (MIT)
+- Протокол и Go-клиент: [MasterDnsVPN от MasterkinG32](https://github.com/masterking32/MasterDnsVPN)
+- Скелет iOS-приложения построен по структуре [Godwit](https://github.com/plumbicon/godwit) (MIT)
