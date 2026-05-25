@@ -6,8 +6,8 @@ settings:
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: 5.9
-    MARKETING_VERSION: 0.1.3
-    CURRENT_PROJECT_VERSION: 4
+    MARKETING_VERSION: 0.1.4
+    CURRENT_PROJECT_VERSION: 5
 packages:
   ZanozaApple:
     path: .

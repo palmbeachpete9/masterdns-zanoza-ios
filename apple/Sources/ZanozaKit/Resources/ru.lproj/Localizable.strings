@@ -73,6 +73,7 @@
 "No log lines yet." = "Записей пока нет.";
 
 "Diagnostics" = "Диагностика";
+"Version" = "Версия";
 "Bound interface" = "Сетевой интерфейс";
 "None" = "Нет";
 "Wi-Fi" = "Wi-Fi";

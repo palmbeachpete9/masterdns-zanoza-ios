@@ -28,8 +28,9 @@ final class ConfigBuilderTests: XCTestCase {
 
     func testFallsBackToBundledResolversWhenCustomIsEmpty() {
         let text = ConfigBuilder.resolversText(settings: AppSettings())
-        XCTAssertTrue(text.contains("1.1.1.1"))
-        XCTAssertTrue(text.contains("8.8.8.8"))
+        // Bundled list is curated to the high-MTU Yandex set.
+        XCTAssertTrue(text.contains("77.88.8.8"))
+        XCTAssertTrue(text.contains("77.88.8.88"))
     }
 
     func testGlobalResolverOverrideAppliesToEveryProfile() {

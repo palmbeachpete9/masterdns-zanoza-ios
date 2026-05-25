@@ -50,6 +50,14 @@ public struct SettingsView: View {
 
             Section {
                 HStack {
+                    Text(AppLocalization.string("Version"))
+                    Spacer()
+                    Text(appVersionDisplay)
+                        .foregroundColor(.secondary)
+                        .font(.callout.monospacedDigit())
+                        .textSelection(.enabled)
+                }
+                HStack {
                     Text(AppLocalization.string("Bound interface"))
                     Spacer()
                     Text(diagnosticDisplay)
@@ -95,6 +103,22 @@ public struct SettingsView: View {
         }
         .formStyle(.grouped)
         .onDisappear(perform: onCommit)
+    }
+
+    private var appVersionDisplay: String {
+        let info = Bundle.main.infoDictionary
+        let marketing = info?["CFBundleShortVersionString"] as? String
+        let build = info?["CFBundleVersion"] as? String
+        switch (marketing, build) {
+        case let (m?, b?) where !m.isEmpty && !b.isEmpty:
+            return "\(m) (\(b))"
+        case let (m?, _) where !m.isEmpty:
+            return m
+        case let (_, b?) where !b.isEmpty:
+            return "build \(b)"
+        default:
+            return "—"
+        }
     }
 
     private var diagnosticDisplay: String {
