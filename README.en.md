@@ -67,7 +67,7 @@ apple/Scripts/build-ios-unsigned-local-ipa.sh
 
 The IPA is unsigned. Sign and install it on a device using:
 
-- **[Sideloadly](https://sideloadly.io)** — drop the IPA in, sign with your Apple ID, install via USB. Free Apple ID profiles expire every 7 days; a paid Apple Developer account ($99/yr) gets 1-year profiles.
+- **[Sideloadly](https://sideloadly.io)** — drop the IPA in, sign with your Apple ID, install via USB.
 - **AltStore / SideStore** — install on-device, no Mac needed for re-signing after the first push.
 
 Enable **Settings → Privacy & Security → Developer Mode** on the iPhone before the first install.
