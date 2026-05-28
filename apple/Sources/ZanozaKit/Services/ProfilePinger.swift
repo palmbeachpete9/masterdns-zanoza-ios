@@ -61,22 +61,19 @@ public final class ProfilePinger: @unchecked Sendable {
         return await withCheckedContinuation { continuation in
             let state = PingContinuationState(continuation: continuation)
 
-            let timeoutWork = DispatchWorkItem {
+            queue.asyncAfter(deadline: .now() + timeout) {
                 state.finish(.failure(AppLocalization.string("Timeout.")), connection: connection)
             }
-            queue.asyncAfter(deadline: .now() + timeout, execute: timeoutWork)
 
             connection.stateUpdateHandler = { newState in
                 switch newState {
                 case .ready:
                     connection.send(content: query, completion: .contentProcessed { sendError in
                         if let sendError {
-                            timeoutWork.cancel()
                             state.finish(.failure(sendError.localizedDescription), connection: connection)
                             return
                         }
                         connection.receiveMessage { data, _, _, recvError in
-                            timeoutWork.cancel()
                             if let recvError {
                                 state.finish(.failure(recvError.localizedDescription), connection: connection)
                                 return
@@ -91,10 +88,9 @@ public final class ProfilePinger: @unchecked Sendable {
                         }
                     })
                 case .failed(let error):
-                    timeoutWork.cancel()
                     state.finish(.failure(error.localizedDescription), connection: connection)
                 case .cancelled:
-                    timeoutWork.cancel()
+                    break
                 default:
                     break
                 }

@@ -18,3 +18,10 @@ func dialUDPBound(network string, raddr *net.UDPAddr, _ string, local net.IP) (*
 	}
 	return net.DialUDP(network, nil, raddr)
 }
+
+func listenUDPBound(network string, _ string, local net.IP) (*net.UDPConn, error) {
+	if local == nil {
+		local = unspecifiedIPForNetwork(network)
+	}
+	return net.ListenUDP(network, &net.UDPAddr{IP: local, Port: 0})
+}

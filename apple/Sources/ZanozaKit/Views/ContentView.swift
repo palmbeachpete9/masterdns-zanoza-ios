@@ -8,6 +8,7 @@ import AppKit
 public struct ContentView: View {
     @StateObject private var viewModel: ClientViewModel
     @State private var isShowingImporter = false
+    @State private var isShowingLinkImporter = false
     @State private var isShowingLogs = false
     @State private var isShowingSettings = false
     @State private var detailDestination: DetailDestination?
@@ -58,6 +59,11 @@ public struct ContentView: View {
                     } label: {
                         Label(AppLocalization.string("Import"), systemImage: "square.and.arrow.down")
                     }
+                    Button {
+                        isShowingLinkImporter = true
+                    } label: {
+                        Label(AppLocalization.string("Import from clipboard"), systemImage: "doc.on.clipboard")
+                    }
                 }
                 #else
                 ToolbarItemGroup(placement: .navigation) {
@@ -78,6 +84,11 @@ public struct ContentView: View {
                     } label: {
                         Label(AppLocalization.string("Import"), systemImage: "square.and.arrow.down")
                     }
+                    Button {
+                        isShowingLinkImporter = true
+                    } label: {
+                        Label(AppLocalization.string("Import from clipboard"), systemImage: "doc.on.clipboard")
+                    }
                 }
                 #endif
             }
@@ -86,6 +97,12 @@ public struct ContentView: View {
             ImportProfileSheet(isImporting: viewModel.isImporting) { domain, key, name in
                 viewModel.importProfile(domain: domain, encryptionKey: key, name: name)
                 isShowingImporter = false
+            }
+        }
+        .sheet(isPresented: $isShowingLinkImporter) {
+            ImportProfileLinkSheet(isImporting: viewModel.isImporting) { link in
+                if viewModel.importSharedProfile(link) { return nil }
+                return viewModel.importErrorMessage ?? AppLocalization.string("Invalid profile sharing link.")
             }
         }
         .sheet(isPresented: $isShowingSettings) {
@@ -213,6 +230,16 @@ private struct ProfilesHomeView: View {
                     .swipeActions {
                         Button(AppLocalization.string("Delete"), role: .destructive) {
                             viewModel.deleteProfiles(ids: [profile.id])
+                        }
+                    }
+                    .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                        if viewModel.selectedProfileID == profile.id {
+                            Button {
+                                viewModel.shareProfile(profile)
+                            } label: {
+                                Label(AppLocalization.string("Share"), systemImage: "square.and.arrow.up")
+                            }
+                            .tint(.green)
                         }
                     }
                 }

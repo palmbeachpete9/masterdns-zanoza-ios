@@ -95,11 +95,11 @@ public struct ConnectionProfile: Codable, Equatable, Identifiable {
         domain: String = "",
         encryptionKey: String = "",
         encryptionMethod: EncryptionMethod = .xor,
-        uploadCompression: CompressionType = .off,
-        downloadCompression: CompressionType = .off,
-        packetDuplicationCount: Int = 3,
-        setupPacketDuplicationCount: Int = 4,
-        resolverBalancingStrategy: BalancingStrategy = .leastLoss,
+        uploadCompression: CompressionType = .zlib,
+        downloadCompression: CompressionType = .zlib,
+        packetDuplicationCount: Int = 5,
+        setupPacketDuplicationCount: Int = 6,
+        resolverBalancingStrategy: BalancingStrategy = .hybridScore,
         logLevel: LogLevel = .info
     ) {
         self.id = id
@@ -109,8 +109,9 @@ public struct ConnectionProfile: Codable, Equatable, Identifiable {
         self.encryptionMethod = encryptionMethod
         self.uploadCompression = uploadCompression
         self.downloadCompression = downloadCompression
-        self.packetDuplicationCount = max(1, min(10, packetDuplicationCount))
-        self.setupPacketDuplicationCount = max(packetDuplicationCount, min(12, setupPacketDuplicationCount))
+        let clampedPacketDuplicationCount = max(1, min(10, packetDuplicationCount))
+        self.packetDuplicationCount = clampedPacketDuplicationCount
+        self.setupPacketDuplicationCount = max(clampedPacketDuplicationCount, min(12, setupPacketDuplicationCount))
         self.resolverBalancingStrategy = resolverBalancingStrategy
         self.logLevel = logLevel
     }
@@ -124,17 +125,19 @@ public struct ConnectionProfile: Codable, Equatable, Identifiable {
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        id = try c.decode(UUID.self, forKey: .id)
-        name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
-        domain = try c.decodeIfPresent(String.self, forKey: .domain) ?? ""
-        encryptionKey = try c.decodeIfPresent(String.self, forKey: .encryptionKey) ?? ""
-        encryptionMethod = try c.decodeIfPresent(EncryptionMethod.self, forKey: .encryptionMethod) ?? .xor
-        uploadCompression = try c.decodeIfPresent(CompressionType.self, forKey: .uploadCompression) ?? .off
-        downloadCompression = try c.decodeIfPresent(CompressionType.self, forKey: .downloadCompression) ?? .off
-        packetDuplicationCount = try c.decodeIfPresent(Int.self, forKey: .packetDuplicationCount) ?? 3
-        setupPacketDuplicationCount = try c.decodeIfPresent(Int.self, forKey: .setupPacketDuplicationCount) ?? 4
-        resolverBalancingStrategy = try c.decodeIfPresent(BalancingStrategy.self, forKey: .resolverBalancingStrategy) ?? .leastLoss
-        logLevel = try c.decodeIfPresent(LogLevel.self, forKey: .logLevel) ?? .info
+        self.init(
+            id: try c.decode(UUID.self, forKey: .id),
+            name: try c.decodeIfPresent(String.self, forKey: .name) ?? "",
+            domain: try c.decodeIfPresent(String.self, forKey: .domain) ?? "",
+            encryptionKey: try c.decodeIfPresent(String.self, forKey: .encryptionKey) ?? "",
+            encryptionMethod: try c.decodeIfPresent(EncryptionMethod.self, forKey: .encryptionMethod) ?? .xor,
+            uploadCompression: try c.decodeIfPresent(CompressionType.self, forKey: .uploadCompression) ?? .zlib,
+            downloadCompression: try c.decodeIfPresent(CompressionType.self, forKey: .downloadCompression) ?? .zlib,
+            packetDuplicationCount: try c.decodeIfPresent(Int.self, forKey: .packetDuplicationCount) ?? 5,
+            setupPacketDuplicationCount: try c.decodeIfPresent(Int.self, forKey: .setupPacketDuplicationCount) ?? 6,
+            resolverBalancingStrategy: try c.decodeIfPresent(BalancingStrategy.self, forKey: .resolverBalancingStrategy) ?? .hybridScore,
+            logLevel: try c.decodeIfPresent(LogLevel.self, forKey: .logLevel) ?? .info
+        )
     }
 
     public static var empty: ConnectionProfile {

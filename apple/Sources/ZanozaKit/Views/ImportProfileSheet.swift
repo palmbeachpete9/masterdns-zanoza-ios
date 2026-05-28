@@ -92,6 +92,87 @@ public struct ImportProfileSheet: View {
     }
 }
 
+public struct ImportProfileLinkSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var sharingLink: String
+    @State private var importError: String?
+
+    let isImporting: Bool
+    let onImport: (_ link: String) -> String?
+
+    public init(
+        isImporting: Bool,
+        onImport: @escaping (_ link: String) -> String?
+    ) {
+        _sharingLink = State(initialValue: ClipboardService.string ?? "")
+        self.isImporting = isImporting
+        self.onImport = onImport
+    }
+
+    private var trimmedLink: String {
+        sharingLink.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var canImport: Bool {
+        !trimmedLink.isEmpty && !isImporting
+    }
+
+    public var body: some View {
+        NavigationStack {
+            Form {
+                if let importError {
+                    Section {
+                        Label(importError, systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                    }
+                }
+
+                Section {
+                    TextEditor(text: $sharingLink)
+                        .font(.callout.monospaced())
+                        .frame(minHeight: 112)
+                        #if os(iOS)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        #endif
+                } header: {
+                    Text(AppLocalization.string("Profile sharing link"))
+                } footer: {
+                    Text(AppLocalization.string("Paste a Zanoza profile sharing link."))
+                }
+            }
+            .formStyle(.grouped)
+            .navigationTitle(AppLocalization.string("Import profile"))
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(AppLocalization.string("Cancel"), role: .cancel) { dismiss() }
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: importIfReady) {
+                        ImportLabel(isImporting: isImporting)
+                    }
+                    .disabled(!canImport)
+                }
+            }
+        }
+        #if os(macOS)
+        .frame(width: 460, height: 280)
+        #endif
+    }
+
+    private func importIfReady() {
+        guard canImport else { return }
+        if let message = onImport(trimmedLink) {
+            importError = message
+        } else {
+            dismiss()
+        }
+    }
+}
+
 private struct ImportLabel: View {
     let isImporting: Bool
 

@@ -169,3 +169,43 @@ func DialUDP(network string, raddr *net.UDPAddr) (*net.UDPConn, error) {
 	}
 	return dialUDPBound(network, raddr, name, local)
 }
+
+// ListenUDP opens an unconnected UDP socket for WriteToUDP/ReadFromUDP
+// traffic. It applies the same interface/source-IP binding as DialUDP, which
+// is required for the async tunnel worker sockets on iOS.
+func ListenUDP(network string) (*net.UDPConn, error) {
+	name := Current()
+	local := localIPForListen(network, CurrentIPv4(), CurrentIPv6())
+	if name == "" && local == nil {
+		return net.ListenUDP(network, &net.UDPAddr{IP: unspecifiedIPForNetwork(network), Port: 0})
+	}
+	return listenUDPBound(network, name, local)
+}
+
+func localIPForListen(network, v4, v6 string) net.IP {
+	switch network {
+	case "udp6":
+		if v6 != "" {
+			return net.ParseIP(v6)
+		}
+	case "udp4":
+		if v4 != "" {
+			return net.ParseIP(v4)
+		}
+	default:
+		if v4 != "" {
+			return net.ParseIP(v4)
+		}
+		if v6 != "" {
+			return net.ParseIP(v6)
+		}
+	}
+	return nil
+}
+
+func unspecifiedIPForNetwork(network string) net.IP {
+	if network == "udp6" {
+		return net.IPv6zero
+	}
+	return net.IPv4zero
+}

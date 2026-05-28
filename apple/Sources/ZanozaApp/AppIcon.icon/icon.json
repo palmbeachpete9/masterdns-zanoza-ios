@@ -8,28 +8,23 @@
       "layers" : [
         {
           "fill" : {
-            "solid" : "srgb:1.00000,1.00000,1.00000,1.00000"
-          },
-          "hidden" : true,
-          "image-name" : "striking-splinter-svgrepo-com.svg",
-          "name" : "Layer",
-          "position" : {
-            "scale" : 1.06,
-            "translation-in-points" : [
-              0,
-              0
-            ]
-          }
-        },
-        {
-          "fill" : {
-            "solid" : "srgb:1.00000,1.00000,1.00000,1.00000"
+            "automatic-gradient" : "srgb:1.00000,1.00000,1.00000,1.00000",
+            "orientation" : {
+              "start" : {
+                "x" : 0.5,
+                "y" : 1
+              },
+              "stop" : {
+                "x" : 0.5,
+                "y" : 0.3
+              }
+            }
           },
           "hidden" : false,
-          "image-name" : "pero.svg",
-          "name" : "pero",
+          "image-name" : "splintah_no_pussy.svg",
+          "name" : "splintah_no_pussy",
           "position" : {
-            "scale" : 1.06,
+            "scale" : 1.05,
             "translation-in-points" : [
               0,
               0
@@ -39,7 +34,7 @@
       ],
       "lighting" : "individual",
       "shadow" : {
-        "kind" : "neutral",
+        "kind" : "layer-color",
         "opacity" : 0.5
       },
       "specular" : true,

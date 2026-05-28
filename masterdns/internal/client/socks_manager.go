@@ -13,9 +13,12 @@ import (
 	"io"
 	"net"
 	"slices"
+	"sync"
 	"time"
 
 	"masterdnsvpn-go/internal/arq"
+	dnsCache "masterdnsvpn-go/internal/dnscache"
+	dnsParser "masterdnsvpn-go/internal/dnsparser"
 	Enums "masterdnsvpn-go/internal/enums"
 	VpnProto "masterdnsvpn-go/internal/vpnproto"
 )
@@ -654,13 +657,82 @@ func (c *Client) handleSocksUDPAssociate(ctx context.Context, conn net.Conn, cli
 		return
 	}
 
-	buf := make([]byte, 4096)
+	// RFC 1928: the UDP association lives as long as the TCP control
+	// connection. Watching `conn.Read` returning EOF/error lets us cancel
+	// promptly without relying on a UDP idle timeout.
+	relayCtx, cancelRelay := context.WithCancel(ctx)
+	defer cancelRelay()
+	go func() {
+		drain := make([]byte, 32)
+		for {
+			_ = conn.SetReadDeadline(time.Time{})
+			if _, err := conn.Read(drain); err != nil {
+				cancelRelay()
+				return
+			}
+		}
+	}()
+
+	// Track DNS queries that missed the cache so we can deliver their
+	// answers once the tunnel populates the cache asynchronously.
+	type pendingDNSQuery struct {
+		cacheKey  string
+		rawQuery  []byte
+		peerAddr  *net.UDPAddr
+		respATYP  byte
+		respAddr  string
+		respPort  uint16
+		deadline  time.Time
+	}
+	var (
+		pendingMu sync.Mutex
+		pendings  []*pendingDNSQuery
+	)
+	const pendingTTL = 8 * time.Second
+
+	go func() {
+		ticker := time.NewTicker(150 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-relayCtx.Done():
+				return
+			case now := <-ticker.C:
+				pendingMu.Lock()
+				kept := pendings[:0]
+				for _, p := range pendings {
+					if now.After(p.deadline) {
+						continue
+					}
+					resp, ok := c.localDNSCache.GetReady(p.cacheKey, p.rawQuery, now)
+					if !ok {
+						kept = append(kept, p)
+						continue
+					}
+					header := buildSocksUDPResponseHeader(p.respATYP, p.respAddr, p.respPort)
+					full := append(header, resp...)
+					_, _ = udpConn.WriteToUDP(full, p.peerAddr)
+				}
+				pendings = kept
+				pendingMu.Unlock()
+			}
+		}
+	}()
+
+	// 64 KB max UDP datagram; covers EDNS and any plausible SOCKS5 wrap.
+	buf := make([]byte, 65535)
 	for {
-		_ = udpConn.SetReadDeadline(time.Now().Add(c.cfg.SOCKSUDPAssociateReadTimeout()))
+		select {
+		case <-relayCtx.Done():
+			return
+		default:
+		}
+		// Short deadline so we re-check relayCtx promptly without burning CPU.
+		_ = udpConn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
 		n, peerAddr, err := udpConn.ReadFromUDP(buf)
 		if err != nil {
 			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-				return
+				continue
 			}
 			return
 		}
@@ -717,7 +789,8 @@ func (c *Client) handleSocksUDPAssociate(ctx context.Context, conn net.Conn, cli
 
 		c.log.Infof("📡 <green>Received DNS Query from SOCKS5 UDP: <cyan>%d bytes</cyan>, Target: <cyan>%s:%d</cyan></green>", n-payloadOffset, targetAddr, targetPort)
 
-		dnsQuery := buf[payloadOffset:n]
+		dnsQuery := make([]byte, n-payloadOffset)
+		copy(dnsQuery, buf[payloadOffset:n])
 		respATYP := buf[3]
 		respTargetAddr := targetAddr
 		respTargetPort := targetPort
@@ -725,19 +798,39 @@ func (c *Client) handleSocksUDPAssociate(ctx context.Context, conn net.Conn, cli
 		isHit := c.ProcessDNSQuery(dnsQuery, peerAddr, func(resp []byte) {
 			// SOCKS5 RFC 1928: the per-packet UDP response header must
 			// echo the original DST.ADDR / DST.PORT so the client can
-			// demux replies across multiple concurrent UDP flows. v0.1.2
-			// fixed BND.ADDR of the initial CONNECT reply; this fixes
-			// the per-packet header which was hardcoded 0.0.0.0:53 and
-			// caused Happ / Shadowrocket to drop every DNS response.
+			// demux replies across concurrent UDP flows.
 			header := buildSocksUDPResponseHeader(respATYP, respTargetAddr, respTargetPort)
 			fullResp := append(header, resp...)
 			_, _ = udpConn.WriteToUDP(fullResp, peerAddr)
 		})
 
-		if !isHit {
-			c.log.Debugf("🧳 <yellow>SOCKS5 DNS Miss or Pending - Closing association to trigger client retry.</yellow>")
-			return
+		if isHit {
+			continue
 		}
+
+		// Cache miss / pending — keep the relay alive (regression: the
+		// previous code returned here, killing every UDP-ASSOCIATE on the
+		// first cold lookup, which is why Happ / Clash Mi could not
+		// resolve anything once the consumer VPN turned on). Stash the
+		// query and let the poller deliver the response when the tunnel
+		// fills the cache.
+		lite, err := dnsParser.ParseDNSRequestLite(dnsQuery)
+		if err != nil || !lite.HasQuestion {
+			continue
+		}
+		q := lite.FirstQuestion
+		cacheKey := dnsCache.BuildKey(q.Name, q.Type, q.Class)
+		pendingMu.Lock()
+		pendings = append(pendings, &pendingDNSQuery{
+			cacheKey: cacheKey,
+			rawQuery: dnsQuery,
+			peerAddr: peerAddr,
+			respATYP: respATYP,
+			respAddr: respTargetAddr,
+			respPort: respTargetPort,
+			deadline: time.Now().Add(pendingTTL),
+		})
+		pendingMu.Unlock()
 	}
 }
 

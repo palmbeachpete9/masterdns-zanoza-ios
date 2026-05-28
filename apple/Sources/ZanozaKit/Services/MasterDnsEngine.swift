@@ -79,7 +79,7 @@ public final class MasterDnsEngine {
         try validate(options.profile, settings: options.settings)
 
         let configTOML = ConfigBuilder.buildTOML(for: options.profile, settings: options.settings)
-        let resolvers = ConfigBuilder.resolversText(settings: options.settings)
+        let resolvers = try ResolverListService.resolve(settings: options.settings)
 
         let fm = FileManager.default
         try fm.createDirectory(at: options.runtimeDirectory, withIntermediateDirectories: true)

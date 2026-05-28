@@ -14,6 +14,7 @@
 "Cancel" = "Cancel";
 "Done" = "Done";
 "Delete" = "Delete";
+"Share" = "Share";
 "Dismiss" = "Dismiss";
 "Logs" = "Logs";
 "Settings" = "Settings";
@@ -39,6 +40,11 @@
 "Encryption key" = "Encryption key";
 "Encryption method" = "Encryption method";
 "Local SOCKS5" = "Local SOCKS5";
+"SOCKS5 proxy" = "SOCKS5 proxy";
+"DNS resolvers" = "DNS resolvers";
+"VPN profile" = "VPN profile";
+"Route system traffic through VPN" = "Route system traffic through VPN";
+"Apple-signed builds only. Enabling the VPN profile on an unsigned build will require a reinstall." = "Apple-signed builds only. Enabling the VPN profile on an unsigned build will require a reinstall.";
 "SOCKS port" = "SOCKS port";
 "Require username/password" = "Require username/password";
 "Username" = "Username";
@@ -53,10 +59,17 @@
 "Logging" = "Logging";
 "Log level" = "Log level";
 "Resolvers" = "Resolvers";
-"One resolver per line. Used by every profile; overrides the bundled list. Leave empty to fall back to the bundled public resolvers." = "One resolver per line. Used by every profile; overrides the bundled list. Leave empty to fall back to the bundled public resolvers.";
+"Provider selection" = "Provider selection";
+"No provider" = "No provider";
+"Use speed-unrestricted servers" = "Use speed-unrestricted servers";
+"Connection may be unstable! Do not use when mobile network restrictions apply!" = "Connection may be unstable! Do not use when mobile network restrictions apply!";
+"One resolver per line. Manual entries override the selected provider or speed-unrestricted servers. Leave empty to use the selected remote list." = "One resolver per line. Manual entries override the selected provider or speed-unrestricted servers. Leave empty to use the selected remote list.";
 "Changes apply after reconnecting." = "Changes apply after reconnecting.";
 
 "Import profile" = "Import profile";
+"Import from clipboard" = "Import from clipboard";
+"Profile sharing link" = "Profile sharing link";
+"Paste a Zanoza profile sharing link." = "Paste a Zanoza profile sharing link.";
 "Delegated domain" = "Delegated domain";
 "During installation, you were asked for a domain. It must be the same delegated subdomain you configured in the NS record, for example v.example.com." = "During installation, you were asked for a domain. It must be the same delegated subdomain you configured in the NS record, for example v.example.com.";
 "Shared key" = "Shared key";
@@ -67,8 +80,16 @@
 "Domain must be a delegated subdomain (e.g. v.example.com)." = "Domain must be a delegated subdomain (e.g. v.example.com).";
 "Encryption key is required." = "Encryption key is required.";
 "SOCKS port must be between 1024 and 65535." = "SOCKS port must be between 1024 and 65535.";
+"Invalid profile sharing link." = "Invalid profile sharing link.";
+"Profile sharing link is not supported." = "Profile sharing link is not supported.";
 "MasterDns Mobile.xcframework not embedded in the build." = "MasterDns Mobile.xcframework not embedded in the build.";
 "Failed to start MasterDnsVPN client." = "Failed to start MasterDnsVPN client.";
+"Failed to download DNS resolver list (%@): %@" = "Failed to download DNS resolver list (%@): %@";
+"DNS resolver list request failed (%@): HTTP %d" = "DNS resolver list request failed (%@): HTTP %d";
+"Invalid DNS resolver list response: %@" = "Invalid DNS resolver list response: %@";
+"DNS resolver list is not UTF-8: %@" = "DNS resolver list is not UTF-8: %@";
+"Invalid DNS resolver entry in %@ on line %d: %@" = "Invalid DNS resolver entry in %@ on line %d: %@";
+"DNS resolver list is empty: %@" = "DNS resolver list is empty: %@";
 
 "No log lines yet." = "No log lines yet.";
 

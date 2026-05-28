@@ -7,15 +7,21 @@ import (
 	"time"
 )
 
-func TestCurrentDefaultsToEmpty(t *testing.T) {
+func resetBindingsForTest(t *testing.T) {
+	t.Helper()
 	SetInterface("")
+	SetAddress("", "")
+}
+
+func TestCurrentDefaultsToEmpty(t *testing.T) {
+	resetBindingsForTest(t)
 	if got := Current(); got != "" {
 		t.Errorf("Current after reset = %q, want empty", got)
 	}
 }
 
 func TestSetInterfaceFiresOnChangeOnDistinctValues(t *testing.T) {
-	SetInterface("")
+	resetBindingsForTest(t)
 	var count int32
 	handle := OnChange(func() { atomic.AddInt32(&count, 1) })
 	defer RemoveHook(handle)
@@ -31,7 +37,7 @@ func TestSetInterfaceFiresOnChangeOnDistinctValues(t *testing.T) {
 }
 
 func TestRemoveHookStopsCallbacks(t *testing.T) {
-	SetInterface("")
+	resetBindingsForTest(t)
 	var count int32
 	handle := OnChange(func() { atomic.AddInt32(&count, 1) })
 
@@ -48,7 +54,7 @@ func TestRemoveHookStopsCallbacks(t *testing.T) {
 }
 
 func TestDialUDPWithoutBindingMatchesNetDial(t *testing.T) {
-	SetInterface("")
+	resetBindingsForTest(t)
 
 	echo, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 0})
 	if err != nil {
@@ -91,6 +97,8 @@ func TestDialUDPWithoutBindingMatchesNetDial(t *testing.T) {
 }
 
 func TestDialUDPWithLoopbackBindingSucceedsOnDarwin(t *testing.T) {
+	resetBindingsForTest(t)
+
 	// lo0 is always present on Darwin and on Linux test runners too.
 	if _, err := net.InterfaceByName("lo0"); err != nil {
 		t.Skip("lo0 not present; skipping interface-binding test")
@@ -123,7 +131,7 @@ func TestDialUDPWithLoopbackBindingSucceedsOnDarwin(t *testing.T) {
 }
 
 func TestSetAddressFiresOnChange(t *testing.T) {
-	SetAddress("", "")
+	resetBindingsForTest(t)
 	var count int32
 	handle := OnChange(func() { atomic.AddInt32(&count, 1) })
 	defer RemoveHook(handle)
@@ -143,4 +151,64 @@ func TestSetAddressFiresOnChange(t *testing.T) {
 		t.Errorf("CurrentIPv6 = %q, want fe80::1", CurrentIPv6())
 	}
 	SetAddress("", "")
+}
+
+func TestListenUDPWithoutBindingReceivesPackets(t *testing.T) {
+	resetBindingsForTest(t)
+
+	listener, err := ListenUDP("udp")
+	if err != nil {
+		t.Fatalf("ListenUDP: %v", err)
+	}
+	defer listener.Close()
+
+	addr, ok := listener.LocalAddr().(*net.UDPAddr)
+	if !ok {
+		t.Fatalf("unexpected local addr type %T", listener.LocalAddr())
+	}
+	target := *addr
+	if target.IP == nil || target.IP.IsUnspecified() {
+		target.IP = net.ParseIP("127.0.0.1")
+	}
+
+	sender, err := net.DialUDP("udp", nil, &target)
+	if err != nil {
+		t.Fatalf("DialUDP sender: %v", err)
+	}
+	defer sender.Close()
+
+	if _, err := sender.Write([]byte("ping")); err != nil {
+		t.Fatalf("sender write: %v", err)
+	}
+
+	buf := make([]byte, 16)
+	_ = listener.SetReadDeadline(time.Now().Add(2 * time.Second))
+	n, _, err := listener.ReadFromUDP(buf)
+	if err != nil {
+		t.Fatalf("listener read: %v", err)
+	}
+	if string(buf[:n]) != "ping" {
+		t.Errorf("payload = %q, want ping", buf[:n])
+	}
+}
+
+func TestListenUDPWithLoopbackBindingSucceedsOnDarwin(t *testing.T) {
+	resetBindingsForTest(t)
+
+	if _, err := net.InterfaceByName("lo0"); err != nil {
+		t.Skip("lo0 not present; skipping interface-binding test")
+	}
+	SetInterface("lo0")
+	SetAddress("127.0.0.1", "")
+	defer resetBindingsForTest(t)
+
+	conn, err := ListenUDP("udp")
+	if err != nil {
+		t.Fatalf("ListenUDP with lo0 binding: %v", err)
+	}
+	defer conn.Close()
+
+	if conn.LocalAddr().(*net.UDPAddr).IP.String() != "127.0.0.1" {
+		t.Errorf("local addr = %v, want 127.0.0.1", conn.LocalAddr())
+	}
 }

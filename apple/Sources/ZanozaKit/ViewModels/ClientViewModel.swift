@@ -28,6 +28,7 @@ public final class ClientViewModel: ObservableObject {
     private var startTask: Task<Void, Never>?
     private var stopTask: Task<Void, Never>?
     private var pingTasks: [UUID: Task<Void, Never>] = [:]
+    private var lifecycleToken: UInt64 = 0
 
     public init() {
         settings = AppSettingsStore.shared.load()
@@ -107,7 +108,43 @@ public final class ClientViewModel: ObservableObject {
         selectedProfileID = profile.id
         draft = profile
         persistProfiles()
+        importErrorMessage = nil
         AppLogger.shared.append("Imported profile \(displayName) (\(trimmedDomain)).")
+    }
+
+    public func shareProfile(_ profile: ConnectionProfile) {
+        do {
+            let link = try ProfileShareCodec.encode(profile)
+            ClipboardService.copy(link)
+            importErrorMessage = nil
+            AppLogger.shared.append("Copied profile \(profile.displayName) to clipboard.")
+        } catch {
+            importErrorMessage = error.localizedDescription
+        }
+    }
+
+    @discardableResult
+    public func importSharedProfile(_ link: String) -> Bool {
+        isImporting = true
+        defer { isImporting = false }
+
+        do {
+            let profile = try ProfileShareCodec.decode(link)
+            if let message = validationMessage(for: profile) {
+                importErrorMessage = message
+                return false
+            }
+            profiles.append(profile)
+            selectedProfileID = profile.id
+            draft = profile
+            persistProfiles()
+            importErrorMessage = nil
+            AppLogger.shared.append("Imported shared profile \(profile.displayName) (\(profile.domain)).")
+            return true
+        } catch {
+            importErrorMessage = error.localizedDescription
+            return false
+        }
     }
 
     public func clearImportError() {
@@ -125,6 +162,7 @@ public final class ClientViewModel: ObservableObject {
 
     public func saveSettings() {
         settings.socksPort = AppSettings.clampedSocksPort(settings.socksPort)
+        settings.resolverProviderID = AppSettings.normalizedResolverProviderID(settings.resolverProviderID)
         settingsStore.save(settings)
     }
 
@@ -173,6 +211,8 @@ public final class ClientViewModel: ObservableObject {
         let boundInterface = physicalInterfaceMonitor.currentName
         let boundIPv4 = physicalInterfaceMonitor.currentIPv4
         let boundIPv6 = physicalInterfaceMonitor.currentIPv6
+        lifecycleToken &+= 1
+        let token = lifecycleToken
         status = .starting
         AppLogger.shared.append("Starting Zanoza tunnel for \(profile.domain)...")
 
@@ -200,13 +240,31 @@ public final class ClientViewModel: ObservableObject {
                     )
                 }.value
 
+                let startAction = startCompletionAction(for: token)
+                switch startAction {
+                case .markReady:
+                    break
+                case .stopEngine:
+                    await Task.detached(priority: .userInitiated) { [engine = self.engine] in
+                        engine.stop()
+                    }.value
+                    #if os(iOS)
+                    await MainActor.run { self.backgroundRuntimeKeeper.stop() }
+                    #endif
+                    return
+                case .ignore:
+                    return
+                }
+
                 await MainActor.run {
+                    guard self.lifecycleToken == token else { return }
                     self.status = .ready
                     self.activeSocksPort = settingsSnapshot.socksPort
                     AppLogger.shared.append("Tunnel ready. SOCKS5 proxy at 127.0.0.1:\(settingsSnapshot.socksPort).")
                 }
             } catch {
                 await MainActor.run {
+                    guard self.lifecycleToken == token else { return }
                     self.status = .failed(error.localizedDescription)
                     AppLogger.shared.append("Tunnel failed to start: \(error.localizedDescription)")
                     #if os(iOS)
@@ -219,6 +277,9 @@ public final class ClientViewModel: ObservableObject {
 
     public func stop() {
         guard status.isRunning else { return }
+        lifecycleToken &+= 1
+        let token = lifecycleToken
+        startTask?.cancel()
         status = .stopping
         AppLogger.shared.append("Stopping tunnel...")
 
@@ -229,6 +290,7 @@ public final class ClientViewModel: ObservableObject {
                 engine.stop()
             }.value
             await MainActor.run {
+                guard self.lifecycleToken == token else { return }
                 #if os(iOS)
                 self.backgroundRuntimeKeeper.stop()
                 #endif
@@ -236,6 +298,18 @@ public final class ClientViewModel: ObservableObject {
                 self.activeSocksPort = nil
                 AppLogger.shared.append("Tunnel stopped.")
             }
+        }
+    }
+
+    private func startCompletionAction(for token: UInt64) -> StartCompletionAction {
+        if lifecycleToken == token && status == .starting && !Task.isCancelled {
+            return .markReady
+        }
+        switch status {
+        case .stopped, .stopping, .failed:
+            return .stopEngine
+        case .starting, .ready:
+            return .ignore
         }
     }
 
@@ -269,4 +343,10 @@ public final class ClientViewModel: ObservableObject {
             .appendingPathComponent("Zanoza", isDirectory: true)
             .appendingPathComponent(profile.id.uuidString, isDirectory: true)
     }
+}
+
+private enum StartCompletionAction {
+    case markReady
+    case stopEngine
+    case ignore
 }

@@ -14,6 +14,7 @@
 "Cancel" = "Отмена";
 "Done" = "Готово";
 "Delete" = "Удалить";
+"Share" = "Поделиться";
 "Dismiss" = "Закрыть";
 "Logs" = "Журнал";
 "Settings" = "Настройки";
@@ -39,6 +40,11 @@
 "Encryption key" = "Ключ шифрования";
 "Encryption method" = "Метод шифрования";
 "Local SOCKS5" = "Локальный SOCKS5";
+"SOCKS5 proxy" = "SOCKS5-прокси";
+"DNS resolvers" = "DNS-резолверы";
+"VPN profile" = "VPN-профиль";
+"Route system traffic through VPN" = "Направлять системный трафик через VPN";
+"Apple-signed builds only. Enabling the VPN profile on an unsigned build will require a reinstall." = "Только для приложений, подписанных действительными сертификатами Apple! При активации VPN-профиля в не подписанном приложении потребуется его переустановка!";
 "SOCKS port" = "Порт SOCKS";
 "Require username/password" = "Требовать логин и пароль";
 "Username" = "Имя пользователя";
@@ -50,13 +56,20 @@
 "Compression" = "Сжатие";
 "Upload" = "Загрузка";
 "Download" = "Скачивание";
-"Logging" = "Журналирование";
+"Logging" = "Логирование";
 "Log level" = "Уровень журнала";
 "Resolvers" = "Резолверы";
-"One resolver per line. Used by every profile; overrides the bundled list. Leave empty to fall back to the bundled public resolvers." = "Один резолвер в строке. Применяется ко всем профилям и перезаписывает встроенный список. Оставьте пустым, чтобы использовать встроенный список публичных резолверов.";
+"Provider selection" = "Выбор провайдера";
+"No provider" = "Провайдер не выбран";
+"Use speed-unrestricted servers" = "Использовать серверы без ограничения скорости";
+"Connection may be unstable! Do not use when mobile network restrictions apply!" = "Подключение может быть нестабильным! Не использовать при ограничениях мобильной связи!";
+"One resolver per line. Manual entries override the selected provider or speed-unrestricted servers. Leave empty to use the selected remote list." = "Один резолвер в строке. Ручные записи перезаписывают выбранного провайдера или серверы без ограничения скорости. Оставьте поле пустым, чтобы использовать выбранный удалённый список.";
 "Changes apply after reconnecting." = "Изменения применятся после переподключения.";
 
 "Import profile" = "Импорт профиля";
+"Import from clipboard" = "Импорт из буфера";
+"Profile sharing link" = "Ссылка профиля";
+"Paste a Zanoza profile sharing link." = "Вставьте ссылку для импорта профиля Zanoza.";
 "Delegated domain" = "Делегированный домен";
 "During installation, you were asked for a domain. It must be the same delegated subdomain you configured in the NS record, for example v.example.com." = "При установке у вас запросили домен. Это должен быть тот же делегированный поддомен, который вы указали в NS-записи, например v.example.com.";
 "Shared key" = "Общий ключ";
@@ -67,8 +80,16 @@
 "Domain must be a delegated subdomain (e.g. v.example.com)." = "Домен должен быть делегированным поддоменом (например, v.example.com).";
 "Encryption key is required." = "Требуется ключ шифрования.";
 "SOCKS port must be between 1024 and 65535." = "Порт SOCKS должен быть в диапазоне 1024–65535.";
+"Invalid profile sharing link." = "Некорректная ссылка профиля.";
+"Profile sharing link is not supported." = "Ссылка профиля не поддерживается.";
 "MasterDns Mobile.xcframework not embedded in the build." = "Mobile.xcframework MasterDns не встроен в сборку.";
 "Failed to start MasterDnsVPN client." = "Не удалось запустить клиент MasterDnsVPN.";
+"Failed to download DNS resolver list (%@): %@" = "Не удалось загрузить список DNS-резолверов (%@): %@";
+"DNS resolver list request failed (%@): HTTP %d" = "Запрос списка DNS-резолверов не удался (%@): HTTP %d";
+"Invalid DNS resolver list response: %@" = "Некорректный ответ списка DNS-резолверов: %@";
+"DNS resolver list is not UTF-8: %@" = "Список DNS-резолверов не в UTF-8: %@";
+"Invalid DNS resolver entry in %@ on line %d: %@" = "Некорректная запись DNS-резолвера в %@ на строке %d: %@";
+"DNS resolver list is empty: %@" = "Список DNS-резолверов пуст: %@";
 
 "No log lines yet." = "Записей пока нет.";
 

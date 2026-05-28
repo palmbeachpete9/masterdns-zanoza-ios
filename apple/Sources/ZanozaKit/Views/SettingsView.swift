@@ -32,7 +32,7 @@ public struct SettingsView: View {
                         .onSubmit(onCommit)
                 }
             } header: {
-                Text(AppLocalization.string("Local SOCKS5"))
+                Text(AppLocalization.string("SOCKS5 proxy"))
             } footer: {
                 if isTunnelRunning {
                     Text(AppLocalization.string("Changes apply after reconnecting."))
@@ -41,11 +41,34 @@ public struct SettingsView: View {
             }
 
             Section {
-                ResolversTextEditor(text: $settings.customResolvers)
+                Toggle(AppLocalization.string("Route system traffic through VPN"), isOn: $settings.systemVPNEnabled)
             } header: {
-                Text(AppLocalization.string("Resolvers"))
+                Text(AppLocalization.string("VPN profile"))
             } footer: {
-                Text(AppLocalization.string("One resolver per line. Used by every profile; overrides the bundled list. Leave empty to fall back to the bundled public resolvers."))
+                Text(AppLocalization.string("Apple-signed builds only. Enabling the VPN profile on an unsigned build will require a reinstall."))
+                    .foregroundColor(.orange)
+            }
+
+            Section {
+                ResolverProviderPicker(
+                    selection: $settings.resolverProviderID,
+                    isDisabled: settings.useFastResolvers
+                )
+            } header: {
+                Text(AppLocalization.string("DNS resolvers"))
+            }
+
+            Section {
+                Toggle(AppLocalization.string("Use speed-unrestricted servers"), isOn: $settings.useFastResolvers)
+            } footer: {
+                Text(AppLocalization.string("Connection may be unstable! Do not use when mobile network restrictions apply!"))
+                    .foregroundColor(.orange)
+            }
+
+            Section {
+                ResolversTextEditor(text: $settings.customResolvers)
+            } footer: {
+                Text(AppLocalization.string("One resolver per line. Manual entries override the selected provider or speed-unrestricted servers. Leave empty to use the selected remote list."))
             }
 
             Section {
@@ -148,6 +171,30 @@ public struct SettingsView: View {
         } else {
             Text(AppLocalization.string("Outbound DNS queries are pinned to this physical interface, bypassing any other active VPN."))
         }
+    }
+}
+
+private struct ResolverProviderPicker: View {
+    @Binding var selection: String
+    let isDisabled: Bool
+
+    var body: some View {
+        Picker(AppLocalization.string("Provider selection"), selection: normalizedSelection) {
+            Text(AppLocalization.string("No provider"))
+                .tag(AppSettings.noResolverProviderID)
+            ForEach(ResolverCatalog.providers) { provider in
+                Text(provider.displayName)
+                    .tag(provider.id)
+            }
+        }
+        .disabled(isDisabled)
+    }
+
+    private var normalizedSelection: Binding<String> {
+        Binding(
+            get: { AppSettings.normalizedResolverProviderID(selection) },
+            set: { selection = AppSettings.normalizedResolverProviderID($0) }
+        )
     }
 }
 

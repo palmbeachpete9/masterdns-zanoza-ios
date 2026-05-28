@@ -60,6 +60,15 @@ final class ConnectionProfileTests: XCTestCase {
         XCTAssertEqual(AppSettings().socksPort, 41080)
     }
 
+    func testDefaultProfileUsesRequestedMasterDnsKnobs() {
+        let profile = ConnectionProfile()
+        XCTAssertEqual(profile.resolverBalancingStrategy, .hybridScore)
+        XCTAssertEqual(profile.packetDuplicationCount, 5)
+        XCTAssertEqual(profile.setupPacketDuplicationCount, 6)
+        XCTAssertEqual(profile.uploadCompression, .zlib)
+        XCTAssertEqual(profile.downloadCompression, .zlib)
+    }
+
     func testSettingsNormalizesOutOfRangePort() {
         XCTAssertEqual(AppSettings.normalizedSocksPort(0), 41080)
         XCTAssertEqual(AppSettings.normalizedSocksPort(100_000), 41080)
@@ -90,11 +99,96 @@ final class ConnectionProfileTests: XCTestCase {
             socksUser: "u",
             socksPass: "p",
             socksAuthEnabled: true,
-            customResolvers: "1.1.1.1\n8.8.8.8"
+            customResolvers: "1.1.1.1\n8.8.8.8",
+            resolverProviderID: "megafon",
+            useFastResolvers: true
         )
         let data = try JSONEncoder().encode(settings)
         let decoded = try JSONDecoder().decode(AppSettings.self, from: data)
         XCTAssertEqual(decoded, settings)
+    }
+
+    func testInvalidResolverProviderFallsBackToNone() {
+        XCTAssertEqual(AppSettings(resolverProviderID: "unknown").resolverProviderID, AppSettings.noResolverProviderID)
+    }
+}
+
+final class ProfileShareCodecTests: XCTestCase {
+    func testSharedProfileLinkPreservesServerSettings() throws {
+        let profile = ConnectionProfile(
+            id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+            name: "Shared",
+            domain: "v.example.com",
+            encryptionKey: "secret",
+            encryptionMethod: .aes256gcm,
+            uploadCompression: .zstd,
+            downloadCompression: .lz4,
+            packetDuplicationCount: 7,
+            setupPacketDuplicationCount: 8,
+            resolverBalancingStrategy: .lossThenLatency,
+            logLevel: .debug
+        )
+
+        let link = try ProfileShareCodec.encode(profile)
+        XCTAssertTrue(link.hasPrefix("zanoza://profile?data="))
+
+        let decoded = try ProfileShareCodec.decode(link)
+        XCTAssertNotEqual(decoded.id, profile.id)
+        XCTAssertEqual(decoded.name, profile.name)
+        XCTAssertEqual(decoded.domain, profile.domain)
+        XCTAssertEqual(decoded.encryptionKey, profile.encryptionKey)
+        XCTAssertEqual(decoded.encryptionMethod, profile.encryptionMethod)
+        XCTAssertEqual(decoded.uploadCompression, profile.uploadCompression)
+        XCTAssertEqual(decoded.downloadCompression, profile.downloadCompression)
+        XCTAssertEqual(decoded.packetDuplicationCount, profile.packetDuplicationCount)
+        XCTAssertEqual(decoded.setupPacketDuplicationCount, profile.setupPacketDuplicationCount)
+        XCTAssertEqual(decoded.resolverBalancingStrategy, profile.resolverBalancingStrategy)
+        XCTAssertEqual(decoded.logLevel, profile.logLevel)
+    }
+
+    func testInvalidSharedProfileLinkThrows() {
+        XCTAssertThrowsError(try ProfileShareCodec.decode("https://example.com/profile"))
+    }
+}
+
+final class ResolverListServiceTests: XCTestCase {
+    func testProviderResolverCombinesProviderWithYandex() throws {
+        let settings = AppSettings(resolverProviderID: "megafon")
+        let text = try ResolverListService.resolve(settings: settings, fetch: { url in
+            switch url.lastPathComponent {
+            case "megafon.txt":
+                return "1.1.1.1\n2.2.2.2\n"
+            case "yandex.txt":
+                return "2.2.2.2\n3.3.3.3\n"
+            default:
+                XCTFail("Unexpected resolver URL \(url)")
+                return ""
+            }
+        })
+        XCTAssertEqual(text, "1.1.1.1\n2.2.2.2\n3.3.3.3\n")
+    }
+
+    func testFastResolverDoesNotCombineYandex() throws {
+        let settings = AppSettings(resolverProviderID: "megafon", useFastResolvers: true)
+        let text = try ResolverListService.resolve(settings: settings, fetch: { url in
+            XCTAssertEqual(url.lastPathComponent, "fast.txt")
+            return "4.4.4.4\n"
+        })
+        XCTAssertEqual(text, "4.4.4.4\n")
+    }
+
+    func testManualResolversSkipRemoteFetch() throws {
+        let manual = "10.0.0.1\n10.0.0.2"
+        let settings = AppSettings(
+            customResolvers: manual,
+            resolverProviderID: "mts",
+            useFastResolvers: true
+        )
+        let text = try ResolverListService.resolve(settings: settings, fetch: { url in
+            XCTFail("Manual resolver override should not fetch \(url)")
+            return ""
+        })
+        XCTAssertEqual(text, manual)
     }
 }
 

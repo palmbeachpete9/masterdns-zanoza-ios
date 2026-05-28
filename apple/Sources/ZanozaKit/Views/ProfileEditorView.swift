@@ -24,7 +24,7 @@ public struct ProfileEditorView: View {
                 }
             }
 
-            Section(AppLocalization.string("Profile")) {
+            Section(AppLocalization.string("Profile name")) {
                 TextField(AppLocalization.string("Profile name"), text: $profile.name)
                     .zanozaPlainInput()
                     .onSubmit(onCommit)

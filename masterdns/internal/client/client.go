@@ -316,9 +316,10 @@ func New(cfg config.ClientConfig, log *logger.Logger, codec *security.Codec) *Cl
 	}
 
 	// Drop cached UDP sockets whenever the bound physical interface changes,
-	// so subsequent dials re-bind to the new interface index. The hook is
-	// removed in Cleanup() to avoid leaking references to a stopped client.
-	c.netbindHook = netbind.OnChange(c.closeResolverConnPools)
+	// so subsequent dials re-bind to the new interface index. If the async
+	// runtime is active, restart it so its long-lived worker sockets are
+	// recreated with the new binding too. The hook is removed in Cleanup().
+	c.netbindHook = netbind.OnChange(c.handleNetbindChange)
 
 	c.balancer.SetStreamFailoverConfig(c.streamResolverFailoverResendThreshold, c.streamResolverFailoverCooldown)
 	c.balancer.SetAutoDisableConfig(
@@ -336,6 +337,17 @@ func New(cfg config.ClientConfig, log *logger.Logger, codec *security.Codec) *Cl
 
 	c.pingManager = newPingManager(c)
 	return c
+}
+
+func (c *Client) handleNetbindChange() {
+	if c == nil {
+		return
+	}
+
+	c.closeResolverConnPools()
+	if c.asyncCancel != nil {
+		c.requestSessionRestart("bound physical interface changed")
+	}
 }
 
 func (c *Client) nextSessionInitRetryDelay(failures int) time.Duration {
