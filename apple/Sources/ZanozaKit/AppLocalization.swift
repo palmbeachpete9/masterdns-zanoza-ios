@@ -8,7 +8,15 @@ public enum AppLocalization {
     }
 
     public static var localeIdentifier: String {
-        Locale.current.region?.identifier == "RU" ? "ru_RU" : "en_US"
+        localizationIdentifier(for: Locale.preferredLanguages.first)
+    }
+
+    static func localizationIdentifier(for preferredLanguage: String?) -> String {
+        guard let preferredLanguage,
+              Locale(identifier: preferredLanguage).language.languageCode?.identifier == "ru" else {
+            return "en_US"
+        }
+        return "ru_RU"
     }
 
     public static func string(_ key: String) -> String {
